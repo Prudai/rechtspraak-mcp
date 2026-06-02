@@ -6,3 +6,10 @@ dist/
 .env.local
 bun.lockb
 coverage/
+
+# Internal — never publish. PrudAI marketing/branding/distribution notes live in the
+# internal runbook at /root/docs/runbooks/mcp-distribution.md, not in this public repo.
+/internal/
+*.internal.md
+BRANDING*.md
+DISTRIBUTION.md
