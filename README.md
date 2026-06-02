@@ -1,3 +1,5 @@
+<p align="center"><img src="./assets/logo.png" alt="rechtspraak-mcp" width="120" height="120"></p>
+
 # rechtspraak-mcp
 
 [![npm](https://img.shields.io/npm/v/rechtspraak-mcp.svg)](https://www.npmjs.com/package/rechtspraak-mcp)
