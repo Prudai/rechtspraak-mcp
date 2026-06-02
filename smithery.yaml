@@ -1,0 +1,10 @@
+# Smithery listing/deploy config. No API key or configuration is required;
+# Smithery launches the published npm package over stdio via npx.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+    required: []
+  commandFunction: |-
+    config => ({ command: 'npx', args: ['-y', 'rechtspraak-mcp'] })
