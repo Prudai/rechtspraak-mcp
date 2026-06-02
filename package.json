@@ -1,6 +1,6 @@
 {
   "name": "rechtspraak-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "mcpName": "io.github.Prudai/rechtspraak-mcp",
   "description": "Model Context Protocol server for Dutch case law (Rechtspraak Open Data + LiDO citation graph). Search and fetch uitspraken by ECLI, with prudai.com deeplinks.",
   "type": "module",
