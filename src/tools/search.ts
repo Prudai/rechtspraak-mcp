@@ -1,7 +1,9 @@
 import { z } from "zod";
+import { getConfig } from "../config.js";
 import { isValidEcli, parseEcli } from "../lib/ecli.js";
 import { ATTRIBUTION, quotingInstruction } from "../lib/prudai.js";
 import { getDocument, search, type SearchParams } from "../rechtspraak/service.js";
+import { expandCitationNetwork, expandSearchResults } from "../rechtspraak/citationNetwork.js";
 import { summaryFromDocument } from "./getDocument.js";
 import { describeError, fail, ok, type McpTool } from "./tool.js";
 
@@ -29,6 +31,7 @@ export const searchUitspraken: McpTool = {
     source: z.enum(["open-data"]),
     results: z.array(z.unknown()),
     keywordIgnored: z.boolean().optional(),
+    citationNetwork: z.array(z.unknown()).optional(),
     guidance: z.string().optional(),
     attribution: z.string().optional(),
     success: z.boolean(),
@@ -41,11 +44,13 @@ export const searchUitspraken: McpTool = {
       try {
         const ecli = parseEcli(params.query).normalized;
         const doc = await getDocument(ecli, { metadataOnly: true });
+        const cn = await expandCitationNetwork(ecli);
         return ok({
           totalCount: 1,
           source: "open-data",
           results: [summaryFromDocument(doc)],
-          guidance: `Direct ECLI lookup. Fetch the full text with get_uitspraak. ${quotingInstruction(ecli)}`,
+          ...(cn ? { citationNetwork: [cn] } : {}),
+          guidance: `Direct ECLI lookup. Fetch the full text with get_uitspraak.${cn ? ` Citation-network (${cn.backend}): ${cn.related.length} linked ruling(s).` : ""} ${quotingInstruction(ecli)}`,
           attribution: ATTRIBUTION,
           success: true,
         });
@@ -67,11 +72,20 @@ export const searchUitspraken: McpTool = {
       guidanceParts.push("Fetch full text for any hit with get_uitspraak.");
       guidanceParts.push(quotingInstruction());
 
+      const citationNetwork = await expandSearchResults(response.results.map((r) => r.ecli));
+      if (citationNetwork.length) {
+        const cfg = getConfig();
+        guidanceParts.push(
+          `Citation-network augmentation ON (${cfg.citationNetwork}): the 'citationNetwork' field lists linked jurisprudence per hit (top ${cfg.citationNetworkTopK}).`,
+        );
+      }
+
       return ok({
         totalCount: response.totalCount,
         source: response.source,
         results: response.results,
         ...(response.keywordIgnored ? { keywordIgnored: true } : {}),
+        ...(citationNetwork.length ? { citationNetwork } : {}),
         guidance: guidanceParts.join(" "),
         attribution: ATTRIBUTION,
         success: true,

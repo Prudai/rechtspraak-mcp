@@ -47,6 +47,35 @@ export function isValidEcli(input: string): boolean {
 }
 
 /**
+ * Global, non-anchored ECLI matcher for pulling citations out of free text (judgment bodies).
+ * Mirrors ECLI_PATTERN's segments but stops the number segment at whitespace/punctuation so a
+ * trailing "." or ")" in prose is not captured.
+ */
+export const ECLI_GLOBAL_PATTERN = /ECLI:[A-Za-z]{2}:[^\s:]+:\d{4}:[^\s:.,;)\]}"'<>]+/gi;
+
+/** Extract, normalize and de-duplicate every ECLI mentioned in `text`; optionally exclude some. */
+export function extractEclis(text: string, opts: { exclude?: Iterable<string> } = {}): string[] {
+  if (!text) return [];
+  const exclude = new Set<string>();
+  for (const e of opts.exclude ?? []) exclude.add(e.trim().toUpperCase());
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const match of text.matchAll(ECLI_GLOBAL_PATTERN)) {
+    let normalized: string;
+    try {
+      normalized = parseEcli(match[0]).normalized;
+    } catch {
+      continue;
+    }
+    const key = normalized.toUpperCase();
+    if (exclude.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    out.push(normalized);
+  }
+  return out;
+}
+
+/**
  * Tuchtrecht (Dutch disciplinary courts) ECLIs use instantie codes starting with "T"
  * (e.g. TAHVD, TADRSHE, TGZRAMS). Rechtspraak does not host these, so the Rechtspraak
  * tools short-circuit them with a helpful error instead of returning a confusing 404.
